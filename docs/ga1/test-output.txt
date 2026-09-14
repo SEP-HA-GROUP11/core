@@ -1,0 +1,27 @@
+(ha-venv) vscode ➜ /workspaces/core (ga1/behavior-trace) $ python -m pytest -q tests/components/open_meteo/test_weather.py::test_forecast_service
+/home/vscode/.local/ha-venv/lib/python3.14/site-packages/rich/segment.py:547: SyntaxWarning: 'return' in a 'finally' block
+  return
+Test session starts (platform: linux, Python 3.14.5, pytest 9.0.3, pytest-sugar 1.1.1)
+rootdir: /workspaces/core
+configfile: pyproject.toml
+plugins: typeguard-4.6.0, modbus-connection-4.10.0, rerunfailures-16.0.1, picked-0.5.1, asyncio-1.4.0, xdist-3.8.0, timeout-2.4.0, pytest_freezer-0.4.9, respx-0.23.1, socket-0.8.1, github-actions-annotate-failures-0.4.2, requests-mock-1.12.1, cov-7.1.0, syrupy-6.0.0, aiohttp-1.1.1, unordered-0.8.0, anyio-4.13.0, sugar-1.1.1
+asyncio: mode=Mode.AUTO, debug=True, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+
+ tests/components/open_meteo/test_weather.py ✓                                        100% ██████████
+-------------------------------------- snapshot report summary --------------------------------------
+2 snapshots passed.
+
+Results (0.75s):
+       1 passed
+(ha-venv) vscode ➜ /workspaces/core (ga1/behavior-trace) $ python -m pytest -q tests/components/open_meteo/test_config_flow.py tests/components/open_meteo/test_init.py
+Test session starts (platform: linux, Python 3.14.5, pytest 9.0.3, pytest-sugar 1.1.1)
+rootdir: /workspaces/core
+configfile: pyproject.toml
+plugins: typeguard-4.6.0, modbus-connection-4.10.0, rerunfailures-16.0.1, picked-0.5.1, asyncio-1.4.0, xdist-3.8.0, timeout-2.4.0, pytest_freezer-0.4.9, respx-0.23.1, socket-0.8.1, github-actions-annotate-failures-0.4.2, requests-mock-1.12.1, cov-7.1.0, syrupy-6.0.0, aiohttp-1.1.1, unordered-0.8.0, anyio-4.13.0, sugar-1.1.1
+asyncio: mode=Mode.AUTO, debug=True, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+
+ tests/components/open_meteo/test_config_flow.py ✓                                     25% ██▌
+ tests/components/open_meteo/test_init.py ✓✓✓                                         100% ██████████
+
+Results (0.56s):
+       4 passed

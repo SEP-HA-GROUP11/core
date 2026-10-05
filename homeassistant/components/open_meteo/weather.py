@@ -4,6 +4,7 @@ from datetime import datetime, time
 from typing import override
 
 from open_meteo import Forecast as OpenMeteoForecast
+from open_meteo.models import DailyForecast, HourlyForecast
 
 from homeassistant.components.weather import (
     ATTR_FORECAST_CLOUD_COVERAGE,
@@ -120,124 +121,113 @@ class OpenMeteoWeatherEntity(
     @override
     def _async_forecast_daily(self) -> list[Forecast] | None:
         """Return the daily forecast in native units."""
-        if self.coordinator.data.daily is None:
+        if (daily := self.coordinator.data.daily) is None:
             return None
 
-        forecasts: list[Forecast] = []
-
-        daily = self.coordinator.data.daily
-        for index, date in enumerate(self.coordinator.data.daily.time):
-            _datetime = datetime.combine(date=date, time=time(0), tzinfo=dt_util.UTC)
-            forecast = Forecast(
-                datetime=_datetime.isoformat(),
-            )
-
-            if daily.weathercode is not None:
-                forecast[ATTR_FORECAST_CONDITION] = WMO_TO_HA_CONDITION_MAP.get(
-                    daily.weathercode[index]
-                )
-
-            if daily.apparent_temperature_max is not None:
-                forecast[ATTR_FORECAST_NATIVE_APPARENT_TEMP] = (
-                    daily.apparent_temperature_max[index]
-                )
-
-            if daily.precipitation_sum is not None:
-                forecast[ATTR_FORECAST_NATIVE_PRECIPITATION] = daily.precipitation_sum[
-                    index
-                ]
-
-            if daily.temperature_2m_max is not None:
-                forecast[ATTR_FORECAST_NATIVE_TEMP] = daily.temperature_2m_max[index]
-
-            if daily.temperature_2m_min is not None:
-                forecast[ATTR_FORECAST_NATIVE_TEMP_LOW] = daily.temperature_2m_min[
-                    index
-                ]
-
-            if daily.wind_direction_10m_dominant is not None:
-                forecast[ATTR_FORECAST_WIND_BEARING] = (
-                    daily.wind_direction_10m_dominant[index]
-                )
-
-            if daily.wind_gusts_10m_max is not None:
-                forecast[ATTR_FORECAST_NATIVE_WIND_GUST_SPEED] = (
-                    daily.wind_gusts_10m_max[index]
-                )
-
-            if daily.wind_speed_10m_max is not None:
-                forecast[ATTR_FORECAST_NATIVE_WIND_SPEED] = daily.wind_speed_10m_max[
-                    index
-                ]
-
-            forecasts.append(forecast)
-
-        return forecasts
+        return [_build_daily_forecast(daily, index) for index in range(len(daily.time))]
 
     @callback
     @override
     def _async_forecast_hourly(self) -> list[Forecast] | None:
-        """Return the daily forecast in native units."""
-        if self.coordinator.data.hourly is None:
+        """Return the hourly forecast in native units."""
+        if (hourly := self.coordinator.data.hourly) is None:
             return None
 
         forecasts: list[Forecast] = []
 
         # Can have data in the past: https://github.com/open-meteo/open-meteo/issues/699
-        today = dt_util.utcnow()
+        now = dt_util.utcnow()
 
-        hourly = self.coordinator.data.hourly
-        for index, _datetime in enumerate(self.coordinator.data.hourly.time):
-            if _datetime.tzinfo is None:
-                _datetime = _datetime.replace(tzinfo=dt_util.UTC)
-            if _datetime < today:
+        for index, forecast_time in enumerate(hourly.time):
+            if forecast_time.tzinfo is None:
+                forecast_time = forecast_time.replace(tzinfo=dt_util.UTC)
+            if forecast_time < now:
                 continue
 
-            forecast = Forecast(
-                datetime=_datetime.isoformat(),
-            )
-
-            if hourly.weather_code is not None:
-                forecast[ATTR_FORECAST_CONDITION] = WMO_TO_HA_CONDITION_MAP.get(
-                    hourly.weather_code[index]
-                )
-
-            if hourly.apparent_temperature is not None:
-                forecast[ATTR_FORECAST_NATIVE_APPARENT_TEMP] = (
-                    hourly.apparent_temperature[index]
-                )
-
-            if hourly.cloud_cover is not None:
-                forecast[ATTR_FORECAST_CLOUD_COVERAGE] = hourly.cloud_cover[index]
-
-            if hourly.dew_point_2m is not None:
-                forecast[ATTR_FORECAST_NATIVE_DEW_POINT] = hourly.dew_point_2m[index]
-
-            if hourly.precipitation is not None:
-                forecast[ATTR_FORECAST_NATIVE_PRECIPITATION] = hourly.precipitation[
-                    index
-                ]
-
-            if hourly.pressure_msl is not None:
-                forecast[ATTR_FORECAST_NATIVE_PRESSURE] = hourly.pressure_msl[index]
-
-            if hourly.relative_humidity_2m is not None:
-                forecast[ATTR_FORECAST_HUMIDITY] = hourly.relative_humidity_2m[index]
-
-            if hourly.temperature_2m is not None:
-                forecast[ATTR_FORECAST_NATIVE_TEMP] = hourly.temperature_2m[index]
-
-            if hourly.wind_direction_10m is not None:
-                forecast[ATTR_FORECAST_WIND_BEARING] = hourly.wind_direction_10m[index]
-
-            if hourly.wind_gusts_10m is not None:
-                forecast[ATTR_FORECAST_NATIVE_WIND_GUST_SPEED] = hourly.wind_gusts_10m[
-                    index
-                ]
-
-            if hourly.wind_speed_10m is not None:
-                forecast[ATTR_FORECAST_NATIVE_WIND_SPEED] = hourly.wind_speed_10m[index]
-
-            forecasts.append(forecast)
+            forecasts.append(_build_hourly_forecast(hourly, index, forecast_time))
 
         return forecasts
+
+
+def _build_daily_forecast(daily: DailyForecast, index: int) -> Forecast:
+    """Convert one daily entry to a forecast in native units."""
+    forecast_time = datetime.combine(
+        date=daily.time[index], time=time(0), tzinfo=dt_util.UTC
+    )
+    forecast = Forecast(datetime=forecast_time.isoformat())
+
+    if daily.weathercode is not None:
+        forecast[ATTR_FORECAST_CONDITION] = WMO_TO_HA_CONDITION_MAP.get(
+            daily.weathercode[index]
+        )
+
+    if daily.apparent_temperature_max is not None:
+        forecast[ATTR_FORECAST_NATIVE_APPARENT_TEMP] = daily.apparent_temperature_max[
+            index
+        ]
+
+    if daily.precipitation_sum is not None:
+        forecast[ATTR_FORECAST_NATIVE_PRECIPITATION] = daily.precipitation_sum[index]
+
+    if daily.temperature_2m_max is not None:
+        forecast[ATTR_FORECAST_NATIVE_TEMP] = daily.temperature_2m_max[index]
+
+    if daily.temperature_2m_min is not None:
+        forecast[ATTR_FORECAST_NATIVE_TEMP_LOW] = daily.temperature_2m_min[index]
+
+    if daily.wind_direction_10m_dominant is not None:
+        forecast[ATTR_FORECAST_WIND_BEARING] = daily.wind_direction_10m_dominant[index]
+
+    if daily.wind_gusts_10m_max is not None:
+        forecast[ATTR_FORECAST_NATIVE_WIND_GUST_SPEED] = daily.wind_gusts_10m_max[index]
+
+    if daily.wind_speed_10m_max is not None:
+        forecast[ATTR_FORECAST_NATIVE_WIND_SPEED] = daily.wind_speed_10m_max[index]
+
+    return forecast
+
+
+def _build_hourly_forecast(
+    hourly: HourlyForecast, index: int, forecast_time: datetime
+) -> Forecast:
+    """Convert one hourly entry using its timezone-aware timestamp."""
+    forecast = Forecast(datetime=forecast_time.isoformat())
+
+    if hourly.weather_code is not None:
+        forecast[ATTR_FORECAST_CONDITION] = WMO_TO_HA_CONDITION_MAP.get(
+            hourly.weather_code[index]
+        )
+
+    if hourly.apparent_temperature is not None:
+        forecast[ATTR_FORECAST_NATIVE_APPARENT_TEMP] = hourly.apparent_temperature[
+            index
+        ]
+
+    if hourly.cloud_cover is not None:
+        forecast[ATTR_FORECAST_CLOUD_COVERAGE] = hourly.cloud_cover[index]
+
+    if hourly.dew_point_2m is not None:
+        forecast[ATTR_FORECAST_NATIVE_DEW_POINT] = hourly.dew_point_2m[index]
+
+    if hourly.precipitation is not None:
+        forecast[ATTR_FORECAST_NATIVE_PRECIPITATION] = hourly.precipitation[index]
+
+    if hourly.pressure_msl is not None:
+        forecast[ATTR_FORECAST_NATIVE_PRESSURE] = hourly.pressure_msl[index]
+
+    if hourly.relative_humidity_2m is not None:
+        forecast[ATTR_FORECAST_HUMIDITY] = hourly.relative_humidity_2m[index]
+
+    if hourly.temperature_2m is not None:
+        forecast[ATTR_FORECAST_NATIVE_TEMP] = hourly.temperature_2m[index]
+
+    if hourly.wind_direction_10m is not None:
+        forecast[ATTR_FORECAST_WIND_BEARING] = hourly.wind_direction_10m[index]
+
+    if hourly.wind_gusts_10m is not None:
+        forecast[ATTR_FORECAST_NATIVE_WIND_GUST_SPEED] = hourly.wind_gusts_10m[index]
+
+    if hourly.wind_speed_10m is not None:
+        forecast[ATTR_FORECAST_NATIVE_WIND_SPEED] = hourly.wind_speed_10m[index]
+
+    return forecast

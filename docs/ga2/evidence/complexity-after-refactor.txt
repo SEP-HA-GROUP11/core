@@ -1,0 +1,44 @@
+/workspaces/core/homeassistant/components/open_meteo/diagnostics.py
+    F 17:0 async_get_config_entry_diagnostics - A (1)
+/workspaces/core/homeassistant/components/open_meteo/weather.py
+    F 190:0 _build_hourly_forecast - C (12)
+    F 152:0 _build_daily_forecast - B (9)
+    M 131:4 OpenMeteoWeatherEntity._async_forecast_hourly - A (5)
+    C 52:0 OpenMeteoWeatherEntity - A (3)
+    M 122:4 OpenMeteoWeatherEntity._async_forecast_daily - A (3)
+    M 88:4 OpenMeteoWeatherEntity.condition - A (2)
+    M 98:4 OpenMeteoWeatherEntity.native_temperature - A (2)
+    M 106:4 OpenMeteoWeatherEntity.native_wind_speed - A (2)
+    M 114:4 OpenMeteoWeatherEntity.wind_bearing - A (2)
+    F 42:0 async_setup_entry - A (1)
+    M 69:4 OpenMeteoWeatherEntity.__init__ - A (1)
+/workspaces/core/homeassistant/components/open_meteo/__init__.py
+    F 11:0 async_setup_entry - A (1)
+    F 24:0 async_unload_entry - A (1)
+/workspaces/core/homeassistant/components/open_meteo/coordinator.py
+    C 27:0 OpenMeteoDataUpdateCoordinator - A (3)
+    M 45:4 OpenMeteoDataUpdateCoordinator._async_update_data - A (3)
+    M 32:4 OpenMeteoDataUpdateCoordinator.__init__ - A (1)
+/workspaces/core/homeassistant/components/open_meteo/config_flow.py
+    C 15:0 OpenMeteoFlowHandler - A (4)
+    M 21:4 OpenMeteoFlowHandler.async_step_user - A (3)
+/workspaces/core/tests/components/open_meteo/test_config_flow.py
+    F 14:0 test_full_user_flow - B (6)
+/workspaces/core/tests/components/open_meteo/conftest.py
+    F 36:0 mock_open_meteo - A (3)
+    F 16:0 mock_config_entry - A (1)
+    F 27:0 mock_setup_entry - A (1)
+/workspaces/core/tests/components/open_meteo/test_weather.py
+    F 226:0 test_forecast_missing_optional_field - B (8)
+    F 53:0 test_missing_current_weather - B (7)
+    F 337:0 test_hourly_forecast_time_boundary - B (6)
+    F 278:0 test_forecast_zero_precipitation - A (4)
+    F 22:0 test_forecast_service - A (3)
+    F 79:0 test_forecast_missing_section - A (3)
+/workspaces/core/tests/components/open_meteo/test_init.py
+    F 16:0 test_load_unload_config_entry - A (4)
+    F 39:0 test_config_entry_not_ready - A (3)
+    F 53:0 test_config_entry_zone_removed - A (3)
+
+32 blocks (classes, functions, methods) analyzed.
+Average complexity: A (3.46875)

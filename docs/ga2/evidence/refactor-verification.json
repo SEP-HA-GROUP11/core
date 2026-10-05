@@ -1,0 +1,38 @@
+{
+  "head_at_verification": "fda6e9ae62e25e9b61684bd63964d743dc7c4a5c",
+  "note": "HEAD may precede the production commit; file hashes identify the verified working tree.",
+  "file_sha256": {
+    "homeassistant/components/open_meteo/weather.py": "e0b12dba7bd0c623c711f73d2f58173427a89f001459bdaeeb5d8579aeb0dc7b",
+    "tests/components/open_meteo/test_weather.py": "845239d6ff3340a1e4c6ba87724cb8f0b706ea5c4d9b479fba1a4d01f7ed666d"
+  },
+  "mutations": {
+    "zero_precipitation": {
+      "status": "killed",
+      "exit_code": 1,
+      "totals": {
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "production_restored": true
+    },
+    "hourly_boundary": {
+      "status": "killed",
+      "exit_code": 1,
+      "totals": {
+        "tests": 3,
+        "failures": 3,
+        "errors": 0,
+        "skipped": 0
+      },
+      "production_restored": true
+    }
+  },
+  "restored_tests": {
+    "tests": 32,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

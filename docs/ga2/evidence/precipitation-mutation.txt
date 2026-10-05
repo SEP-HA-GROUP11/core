@@ -1,0 +1,42 @@
+MUTATED RUN: expect failure because zero precipitation is omitted.
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_forecast_zero_precipitation[daily-precipitation_sum] ___________
+tests/components/open_meteo/test_weather.py:174: in test_forecast_zero_precipitation
+    assert all(forecast["precipitation"] == 0 for forecast in forecasts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/components/open_meteo/test_weather.py:174: in <genexpr>
+    assert all(forecast["precipitation"] == 0 for forecast in forecasts)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'precipitation'
+---------------------------- Captured stderr setup -----------------------------
+INFO:homeassistant.loader:Loaded homeassistant from homeassistant.components.homeassistant
+------------------------------ Captured log setup ------------------------------
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded homeassistant from homeassistant.components.homeassistant
+----------------------------- Captured stderr call -----------------------------
+INFO:homeassistant.loader:Loaded open_meteo from homeassistant.components.open_meteo
+INFO:homeassistant.loader:Loaded zone from homeassistant.components.zone
+INFO:homeassistant.setup:Setting up zone
+INFO:homeassistant.setup:Setting up open_meteo
+INFO:homeassistant.loader:Loaded weather from homeassistant.components.weather
+INFO:homeassistant.setup:Setting up weather
+INFO:homeassistant.components.weather:Setting up open_meteo.weather
+INFO:homeassistant.helpers.entity_registry:Registered new weather.open_meteo entity: weather.home
+------------------------------ Captured log call -------------------------------
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded open_meteo from homeassistant.components.open_meteo
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded zone from homeassistant.components.zone
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up zone
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up open_meteo
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded weather from homeassistant.components.weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.components.weather:entity_platform.py:484 Setting up open_meteo.weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.helpers.entity_registry:entity_registry.py:1638 Registered new weather.open_meteo entity: weather.home
+=========================== short test summary info ============================
+FAILED tests/components/open_meteo/test_weather.py::test_forecast_zero_precipitation[daily-precipitation_sum]
+1 failed, 7 deselected in 0.51s
+Original production file restored.
+RESTORED RUN: expect all integration tests to pass.
+............                                                             [100%]
+--------------------------- snapshot report summary ----------------------------
+2 snapshots passed.
+12 passed in 1.01s

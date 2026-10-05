@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.526" timestamp="2026-10-05T16:43:34.385715+00:00" hostname="73a4c0a5f724"><testcase classname="tests.components.open_meteo.test_weather" name="test_forecast_zero_precipitation[daily-precipitation_sum]" time="0.202"><failure message="KeyError: 'precipitation'">hass = &lt;HomeAssistant RUNNING&gt;
+mock_config_entry = &lt;ConfigEntry entry_id=01FN7Y5FW0X4YVAV87JFBVVY01 version=1 domain=open_meteo title=Home state=ConfigEntryState.LOADED unique_id=zone.home&gt;
+mock_open_meteo = &lt;NonCallableMagicMock name='OpenMeteo()' spec='OpenMeteo' id='129705264578048'&gt;
+forecast_type = 'daily', source_field = 'precipitation_sum'
+
+    @pytest.mark.freeze_time("2021-11-24T03:00:00+00:00")
+    @pytest.mark.parametrize(
+        ("forecast_type", "source_field"),
+        [("daily", "precipitation_sum"), ("hourly", "precipitation")],
+    )
+    async def test_forecast_zero_precipitation(
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        mock_open_meteo: AsyncMock,
+        forecast_type: str,
+        source_field: str,
+    ) -&gt; None:
+        """A valid zero precipitation value remains present in every forecast."""
+        payload = await async_load_json_object_fixture(hass, "forecast.json", DOMAIN)
+        payload[forecast_type][source_field] = [0.0] * len(payload[forecast_type]["time"])
+        mock_open_meteo.forecast.return_value = OpenMeteoForecast.from_json(
+            json.dumps(payload)
+        )
+    
+        mock_config_entry.add_to_hass(hass)
+        assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+    
+        response = await hass.services.async_call(
+            WEATHER_DOMAIN,
+            SERVICE_GET_FORECASTS,
+            {ATTR_ENTITY_ID: "weather.home", "type": forecast_type},
+            blocking=True,
+            return_response=True,
+        )
+        forecasts = response["weather.home"]["forecast"]
+        assert forecasts
+&gt;       assert all(forecast["precipitation"] == 0 for forecast in forecasts)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/components/open_meteo/test_weather.py:305: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+.0 = &lt;list_iterator object at 0x75f75d27fd00&gt;
+
+&gt;   assert all(forecast["precipitation"] == 0 for forecast in forecasts)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'precipitation'
+
+tests/components/open_meteo/test_weather.py:305: KeyError</failure></testcase></testsuite></testsuites>

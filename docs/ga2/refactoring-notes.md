@@ -61,3 +61,11 @@ evidence were retained instead of assuming a lower score proved better design.
 Repository hooks, final human review, and independent teammate review must be
 recorded separately when completed. This note does not assert they have passed.
 No individual reading times or teammate contributions are inferred here.
+
+## Final repository checks
+
+The production commit passed its applicable hooks, including mypy and pylint.
+The repository-wide check encountered a mypy duplicate-module error involving
+homeassistant/util/hass_dict.py and its .pyi stub. The run was interrupted while
+pylint was running, so the full repository check did not complete.
+The targeted integration suite passed all 32 tests and both snapshots.

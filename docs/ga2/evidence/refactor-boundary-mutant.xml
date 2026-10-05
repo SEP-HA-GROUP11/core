@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="0.655" timestamp="2026-10-05T16:43:37.853004+00:00" hostname="73a4c0a5f724"><testcase classname="tests.components.open_meteo.test_weather" name="test_hourly_forecast_time_boundary[naive-assumed-utc]" time="0.227"><failure message="AssertionError: assert ['2021-11-24T04:00:00+00:00'] == ['2021-11-24T...:00:00+00:00']&#10;  &#10;  At index 0 diff: '2021-11-24T04:00:00+00:00' != '2021-11-24T03:00:00+00:00'&#10;  Right contains one more item: '2021-11-24T04:00:00+00:00'&#10;  Use -v to get more diff">hass = &lt;HomeAssistant RUNNING&gt;
+mock_config_entry = &lt;ConfigEntry entry_id=01FN7Y5FW08S38GG4HVHYZP575 version=1 domain=open_meteo title=Home state=ConfigEntryState.LOADED unique_id=zone.home&gt;
+mock_open_meteo = &lt;NonCallableMagicMock name='OpenMeteo()' spec='OpenMeteo' id='125077893217792'&gt;
+timestamps = ['2021-11-24T02:00', '2021-11-24T03:00', '2021-11-24T04:00']
+expected_times = ['2021-11-24T03:00:00+00:00', '2021-11-24T04:00:00+00:00']
+
+    @pytest.mark.freeze_time("2021-11-24T03:00:00+00:00")
+    @pytest.mark.parametrize(
+        ("timestamps", "expected_times"),
+        [
+            pytest.param(
+                ["2021-11-24T02:00", "2021-11-24T03:00", "2021-11-24T04:00"],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="naive-assumed-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T02:00+00:00",
+                    "2021-11-24T03:00+00:00",
+                    "2021-11-24T04:00+00:00",
+                ],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="aware-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T04:00+02:00",
+                    "2021-11-24T05:00+02:00",
+                    "2021-11-24T06:00+02:00",
+                ],
+                ["2021-11-24T05:00:00+02:00", "2021-11-24T06:00:00+02:00"],
+                id="aware-positive-offset",
+            ),
+        ],
+    )
+    async def test_hourly_forecast_time_boundary(
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        mock_open_meteo: AsyncMock,
+        timestamps: list[str],
+        expected_times: list[str],
+    ) -&gt; None:
+        """Exclude past hours, retain the current hour and preserve value alignment."""
+        payload = await async_load_json_object_fixture(hass, "forecast.json", DOMAIN)
+        payload["hourly"] = {key: values[:3] for key, values in payload["hourly"].items()}
+        payload["hourly"]["time"] = timestamps
+        mock_open_meteo.forecast.return_value = OpenMeteoForecast.from_json(
+            json.dumps(payload)
+        )
+    
+        mock_config_entry.add_to_hass(hass)
+        assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+    
+        response = await hass.services.async_call(
+            WEATHER_DOMAIN,
+            SERVICE_GET_FORECASTS,
+            {ATTR_ENTITY_ID: "weather.home", "type": "hourly"},
+            blocking=True,
+            return_response=True,
+        )
+        forecasts = response["weather.home"]["forecast"]
+&gt;       assert [forecast["datetime"] for forecast in forecasts] == expected_times
+E       AssertionError: assert ['2021-11-24T04:00:00+00:00'] == ['2021-11-24T...:00:00+00:00']
+E         
+E         At index 0 diff: '2021-11-24T04:00:00+00:00' != '2021-11-24T03:00:00+00:00'
+E         Right contains one more item: '2021-11-24T04:00:00+00:00'
+E         Use -v to get more diff
+
+tests/components/open_meteo/test_weather.py:364: AssertionError</failure></testcase><testcase classname="tests.components.open_meteo.test_weather" name="test_hourly_forecast_time_boundary[aware-utc]" time="0.050"><failure message="AssertionError: assert ['2021-11-24T04:00:00+00:00'] == ['2021-11-24T...:00:00+00:00']&#10;  &#10;  At index 0 diff: '2021-11-24T04:00:00+00:00' != '2021-11-24T03:00:00+00:00'&#10;  Right contains one more item: '2021-11-24T04:00:00+00:00'&#10;  Use -v to get more diff">hass = &lt;HomeAssistant RUNNING&gt;
+mock_config_entry = &lt;ConfigEntry entry_id=01FN7Y5FW0ZY969S75GKH4WPB2 version=1 domain=open_meteo title=Home state=ConfigEntryState.LOADED unique_id=zone.home&gt;
+mock_open_meteo = &lt;NonCallableMagicMock name='OpenMeteo()' spec='OpenMeteo' id='125077864782144'&gt;
+timestamps = ['2021-11-24T02:00+00:00', '2021-11-24T03:00+00:00', '2021-11-24T04:00+00:00']
+expected_times = ['2021-11-24T03:00:00+00:00', '2021-11-24T04:00:00+00:00']
+
+    @pytest.mark.freeze_time("2021-11-24T03:00:00+00:00")
+    @pytest.mark.parametrize(
+        ("timestamps", "expected_times"),
+        [
+            pytest.param(
+                ["2021-11-24T02:00", "2021-11-24T03:00", "2021-11-24T04:00"],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="naive-assumed-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T02:00+00:00",
+                    "2021-11-24T03:00+00:00",
+                    "2021-11-24T04:00+00:00",
+                ],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="aware-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T04:00+02:00",
+                    "2021-11-24T05:00+02:00",
+                    "2021-11-24T06:00+02:00",
+                ],
+                ["2021-11-24T05:00:00+02:00", "2021-11-24T06:00:00+02:00"],
+                id="aware-positive-offset",
+            ),
+        ],
+    )
+    async def test_hourly_forecast_time_boundary(
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        mock_open_meteo: AsyncMock,
+        timestamps: list[str],
+        expected_times: list[str],
+    ) -&gt; None:
+        """Exclude past hours, retain the current hour and preserve value alignment."""
+        payload = await async_load_json_object_fixture(hass, "forecast.json", DOMAIN)
+        payload["hourly"] = {key: values[:3] for key, values in payload["hourly"].items()}
+        payload["hourly"]["time"] = timestamps
+        mock_open_meteo.forecast.return_value = OpenMeteoForecast.from_json(
+            json.dumps(payload)
+        )
+    
+        mock_config_entry.add_to_hass(hass)
+        assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+    
+        response = await hass.services.async_call(
+            WEATHER_DOMAIN,
+            SERVICE_GET_FORECASTS,
+            {ATTR_ENTITY_ID: "weather.home", "type": "hourly"},
+            blocking=True,
+            return_response=True,
+        )
+        forecasts = response["weather.home"]["forecast"]
+&gt;       assert [forecast["datetime"] for forecast in forecasts] == expected_times
+E       AssertionError: assert ['2021-11-24T04:00:00+00:00'] == ['2021-11-24T...:00:00+00:00']
+E         
+E         At index 0 diff: '2021-11-24T04:00:00+00:00' != '2021-11-24T03:00:00+00:00'
+E         Right contains one more item: '2021-11-24T04:00:00+00:00'
+E         Use -v to get more diff
+
+tests/components/open_meteo/test_weather.py:364: AssertionError</failure></testcase><testcase classname="tests.components.open_meteo.test_weather" name="test_hourly_forecast_time_boundary[aware-positive-offset]" time="0.050"><failure message="AssertionError: assert ['2021-11-24T06:00:00+02:00'] == ['2021-11-24T...:00:00+02:00']&#10;  &#10;  At index 0 diff: '2021-11-24T06:00:00+02:00' != '2021-11-24T05:00:00+02:00'&#10;  Right contains one more item: '2021-11-24T06:00:00+02:00'&#10;  Use -v to get more diff">hass = &lt;HomeAssistant RUNNING&gt;
+mock_config_entry = &lt;ConfigEntry entry_id=01FN7Y5FW0RDWA7ZAG6HY499S5 version=1 domain=open_meteo title=Home state=ConfigEntryState.LOADED unique_id=zone.home&gt;
+mock_open_meteo = &lt;NonCallableMagicMock name='OpenMeteo()' spec='OpenMeteo' id='125077854266640'&gt;
+timestamps = ['2021-11-24T04:00+02:00', '2021-11-24T05:00+02:00', '2021-11-24T06:00+02:00']
+expected_times = ['2021-11-24T05:00:00+02:00', '2021-11-24T06:00:00+02:00']
+
+    @pytest.mark.freeze_time("2021-11-24T03:00:00+00:00")
+    @pytest.mark.parametrize(
+        ("timestamps", "expected_times"),
+        [
+            pytest.param(
+                ["2021-11-24T02:00", "2021-11-24T03:00", "2021-11-24T04:00"],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="naive-assumed-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T02:00+00:00",
+                    "2021-11-24T03:00+00:00",
+                    "2021-11-24T04:00+00:00",
+                ],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="aware-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T04:00+02:00",
+                    "2021-11-24T05:00+02:00",
+                    "2021-11-24T06:00+02:00",
+                ],
+                ["2021-11-24T05:00:00+02:00", "2021-11-24T06:00:00+02:00"],
+                id="aware-positive-offset",
+            ),
+        ],
+    )
+    async def test_hourly_forecast_time_boundary(
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        mock_open_meteo: AsyncMock,
+        timestamps: list[str],
+        expected_times: list[str],
+    ) -&gt; None:
+        """Exclude past hours, retain the current hour and preserve value alignment."""
+        payload = await async_load_json_object_fixture(hass, "forecast.json", DOMAIN)
+        payload["hourly"] = {key: values[:3] for key, values in payload["hourly"].items()}
+        payload["hourly"]["time"] = timestamps
+        mock_open_meteo.forecast.return_value = OpenMeteoForecast.from_json(
+            json.dumps(payload)
+        )
+    
+        mock_config_entry.add_to_hass(hass)
+        assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+    
+        response = await hass.services.async_call(
+            WEATHER_DOMAIN,
+            SERVICE_GET_FORECASTS,
+            {ATTR_ENTITY_ID: "weather.home", "type": "hourly"},
+            blocking=True,
+            return_response=True,
+        )
+        forecasts = response["weather.home"]["forecast"]
+&gt;       assert [forecast["datetime"] for forecast in forecasts] == expected_times
+E       AssertionError: assert ['2021-11-24T06:00:00+02:00'] == ['2021-11-24T...:00:00+02:00']
+E         
+E         At index 0 diff: '2021-11-24T06:00:00+02:00' != '2021-11-24T05:00:00+02:00'
+E         Right contains one more item: '2021-11-24T06:00:00+02:00'
+E         Use -v to get more diff
+
+tests/components/open_meteo/test_weather.py:364: AssertionError</failure></testcase></testsuite></testsuites>

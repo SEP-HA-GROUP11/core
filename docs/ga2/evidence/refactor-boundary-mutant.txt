@@ -1,0 +1,281 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_hourly_forecast_time_boundary[naive-assumed-utc] _____________
+
+hass = <HomeAssistant RUNNING>
+mock_config_entry = <ConfigEntry entry_id=01FN7Y5FW08S38GG4HVHYZP575 version=1 domain=open_meteo title=Home state=ConfigEntryState.LOADED unique_id=zone.home>
+mock_open_meteo = <NonCallableMagicMock name='OpenMeteo()' spec='OpenMeteo' id='125077893217792'>
+timestamps = ['2021-11-24T02:00', '2021-11-24T03:00', '2021-11-24T04:00']
+expected_times = ['2021-11-24T03:00:00+00:00', '2021-11-24T04:00:00+00:00']
+
+    @pytest.mark.freeze_time("2021-11-24T03:00:00+00:00")
+    @pytest.mark.parametrize(
+        ("timestamps", "expected_times"),
+        [
+            pytest.param(
+                ["2021-11-24T02:00", "2021-11-24T03:00", "2021-11-24T04:00"],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="naive-assumed-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T02:00+00:00",
+                    "2021-11-24T03:00+00:00",
+                    "2021-11-24T04:00+00:00",
+                ],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="aware-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T04:00+02:00",
+                    "2021-11-24T05:00+02:00",
+                    "2021-11-24T06:00+02:00",
+                ],
+                ["2021-11-24T05:00:00+02:00", "2021-11-24T06:00:00+02:00"],
+                id="aware-positive-offset",
+            ),
+        ],
+    )
+    async def test_hourly_forecast_time_boundary(
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        mock_open_meteo: AsyncMock,
+        timestamps: list[str],
+        expected_times: list[str],
+    ) -> None:
+        """Exclude past hours, retain the current hour and preserve value alignment."""
+        payload = await async_load_json_object_fixture(hass, "forecast.json", DOMAIN)
+        payload["hourly"] = {key: values[:3] for key, values in payload["hourly"].items()}
+        payload["hourly"]["time"] = timestamps
+        mock_open_meteo.forecast.return_value = OpenMeteoForecast.from_json(
+            json.dumps(payload)
+        )
+    
+        mock_config_entry.add_to_hass(hass)
+        assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+    
+        response = await hass.services.async_call(
+            WEATHER_DOMAIN,
+            SERVICE_GET_FORECASTS,
+            {ATTR_ENTITY_ID: "weather.home", "type": "hourly"},
+            blocking=True,
+            return_response=True,
+        )
+        forecasts = response["weather.home"]["forecast"]
+>       assert [forecast["datetime"] for forecast in forecasts] == expected_times
+E       AssertionError: assert ['2021-11-24T04:00:00+00:00'] == ['2021-11-24T...:00:00+00:00']
+E         
+E         At index 0 diff: '2021-11-24T04:00:00+00:00' != '2021-11-24T03:00:00+00:00'
+E         Right contains one more item: '2021-11-24T04:00:00+00:00'
+E         Use -v to get more diff
+
+tests/components/open_meteo/test_weather.py:364: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+INFO:homeassistant.loader:Loaded homeassistant from homeassistant.components.homeassistant
+------------------------------ Captured log setup ------------------------------
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded homeassistant from homeassistant.components.homeassistant
+----------------------------- Captured stderr call -----------------------------
+INFO:homeassistant.loader:Loaded open_meteo from homeassistant.components.open_meteo
+INFO:homeassistant.loader:Loaded zone from homeassistant.components.zone
+INFO:homeassistant.setup:Setting up zone
+INFO:homeassistant.setup:Setting up open_meteo
+INFO:homeassistant.loader:Loaded weather from homeassistant.components.weather
+INFO:homeassistant.setup:Setting up weather
+INFO:homeassistant.components.weather:Setting up open_meteo.weather
+INFO:homeassistant.helpers.entity_registry:Registered new weather.open_meteo entity: weather.home
+------------------------------ Captured log call -------------------------------
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded open_meteo from homeassistant.components.open_meteo
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded zone from homeassistant.components.zone
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up zone
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up open_meteo
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded weather from homeassistant.components.weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.components.weather:entity_platform.py:484 Setting up open_meteo.weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.helpers.entity_registry:entity_registry.py:1638 Registered new weather.open_meteo entity: weather.home
+________________ test_hourly_forecast_time_boundary[aware-utc] _________________
+
+hass = <HomeAssistant RUNNING>
+mock_config_entry = <ConfigEntry entry_id=01FN7Y5FW0ZY969S75GKH4WPB2 version=1 domain=open_meteo title=Home state=ConfigEntryState.LOADED unique_id=zone.home>
+mock_open_meteo = <NonCallableMagicMock name='OpenMeteo()' spec='OpenMeteo' id='125077864782144'>
+timestamps = ['2021-11-24T02:00+00:00', '2021-11-24T03:00+00:00', '2021-11-24T04:00+00:00']
+expected_times = ['2021-11-24T03:00:00+00:00', '2021-11-24T04:00:00+00:00']
+
+    @pytest.mark.freeze_time("2021-11-24T03:00:00+00:00")
+    @pytest.mark.parametrize(
+        ("timestamps", "expected_times"),
+        [
+            pytest.param(
+                ["2021-11-24T02:00", "2021-11-24T03:00", "2021-11-24T04:00"],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="naive-assumed-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T02:00+00:00",
+                    "2021-11-24T03:00+00:00",
+                    "2021-11-24T04:00+00:00",
+                ],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="aware-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T04:00+02:00",
+                    "2021-11-24T05:00+02:00",
+                    "2021-11-24T06:00+02:00",
+                ],
+                ["2021-11-24T05:00:00+02:00", "2021-11-24T06:00:00+02:00"],
+                id="aware-positive-offset",
+            ),
+        ],
+    )
+    async def test_hourly_forecast_time_boundary(
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        mock_open_meteo: AsyncMock,
+        timestamps: list[str],
+        expected_times: list[str],
+    ) -> None:
+        """Exclude past hours, retain the current hour and preserve value alignment."""
+        payload = await async_load_json_object_fixture(hass, "forecast.json", DOMAIN)
+        payload["hourly"] = {key: values[:3] for key, values in payload["hourly"].items()}
+        payload["hourly"]["time"] = timestamps
+        mock_open_meteo.forecast.return_value = OpenMeteoForecast.from_json(
+            json.dumps(payload)
+        )
+    
+        mock_config_entry.add_to_hass(hass)
+        assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+    
+        response = await hass.services.async_call(
+            WEATHER_DOMAIN,
+            SERVICE_GET_FORECASTS,
+            {ATTR_ENTITY_ID: "weather.home", "type": "hourly"},
+            blocking=True,
+            return_response=True,
+        )
+        forecasts = response["weather.home"]["forecast"]
+>       assert [forecast["datetime"] for forecast in forecasts] == expected_times
+E       AssertionError: assert ['2021-11-24T04:00:00+00:00'] == ['2021-11-24T...:00:00+00:00']
+E         
+E         At index 0 diff: '2021-11-24T04:00:00+00:00' != '2021-11-24T03:00:00+00:00'
+E         Right contains one more item: '2021-11-24T04:00:00+00:00'
+E         Use -v to get more diff
+
+tests/components/open_meteo/test_weather.py:364: AssertionError
+----------------------------- Captured stderr call -----------------------------
+INFO:homeassistant.loader:Loaded open_meteo from homeassistant.components.open_meteo
+INFO:homeassistant.loader:Loaded zone from homeassistant.components.zone
+INFO:homeassistant.setup:Setting up zone
+INFO:homeassistant.setup:Setting up open_meteo
+INFO:homeassistant.loader:Loaded weather from homeassistant.components.weather
+INFO:homeassistant.setup:Setting up weather
+INFO:homeassistant.components.weather:Setting up open_meteo.weather
+INFO:homeassistant.helpers.entity_registry:Registered new weather.open_meteo entity: weather.home
+------------------------------ Captured log call -------------------------------
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded open_meteo from homeassistant.components.open_meteo
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded zone from homeassistant.components.zone
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up zone
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up open_meteo
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded weather from homeassistant.components.weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.components.weather:entity_platform.py:484 Setting up open_meteo.weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.helpers.entity_registry:entity_registry.py:1638 Registered new weather.open_meteo entity: weather.home
+__________ test_hourly_forecast_time_boundary[aware-positive-offset] ___________
+
+hass = <HomeAssistant RUNNING>
+mock_config_entry = <ConfigEntry entry_id=01FN7Y5FW0RDWA7ZAG6HY499S5 version=1 domain=open_meteo title=Home state=ConfigEntryState.LOADED unique_id=zone.home>
+mock_open_meteo = <NonCallableMagicMock name='OpenMeteo()' spec='OpenMeteo' id='125077854266640'>
+timestamps = ['2021-11-24T04:00+02:00', '2021-11-24T05:00+02:00', '2021-11-24T06:00+02:00']
+expected_times = ['2021-11-24T05:00:00+02:00', '2021-11-24T06:00:00+02:00']
+
+    @pytest.mark.freeze_time("2021-11-24T03:00:00+00:00")
+    @pytest.mark.parametrize(
+        ("timestamps", "expected_times"),
+        [
+            pytest.param(
+                ["2021-11-24T02:00", "2021-11-24T03:00", "2021-11-24T04:00"],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="naive-assumed-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T02:00+00:00",
+                    "2021-11-24T03:00+00:00",
+                    "2021-11-24T04:00+00:00",
+                ],
+                ["2021-11-24T03:00:00+00:00", "2021-11-24T04:00:00+00:00"],
+                id="aware-utc",
+            ),
+            pytest.param(
+                [
+                    "2021-11-24T04:00+02:00",
+                    "2021-11-24T05:00+02:00",
+                    "2021-11-24T06:00+02:00",
+                ],
+                ["2021-11-24T05:00:00+02:00", "2021-11-24T06:00:00+02:00"],
+                id="aware-positive-offset",
+            ),
+        ],
+    )
+    async def test_hourly_forecast_time_boundary(
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        mock_open_meteo: AsyncMock,
+        timestamps: list[str],
+        expected_times: list[str],
+    ) -> None:
+        """Exclude past hours, retain the current hour and preserve value alignment."""
+        payload = await async_load_json_object_fixture(hass, "forecast.json", DOMAIN)
+        payload["hourly"] = {key: values[:3] for key, values in payload["hourly"].items()}
+        payload["hourly"]["time"] = timestamps
+        mock_open_meteo.forecast.return_value = OpenMeteoForecast.from_json(
+            json.dumps(payload)
+        )
+    
+        mock_config_entry.add_to_hass(hass)
+        assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+    
+        response = await hass.services.async_call(
+            WEATHER_DOMAIN,
+            SERVICE_GET_FORECASTS,
+            {ATTR_ENTITY_ID: "weather.home", "type": "hourly"},
+            blocking=True,
+            return_response=True,
+        )
+        forecasts = response["weather.home"]["forecast"]
+>       assert [forecast["datetime"] for forecast in forecasts] == expected_times
+E       AssertionError: assert ['2021-11-24T06:00:00+02:00'] == ['2021-11-24T...:00:00+02:00']
+E         
+E         At index 0 diff: '2021-11-24T06:00:00+02:00' != '2021-11-24T05:00:00+02:00'
+E         Right contains one more item: '2021-11-24T06:00:00+02:00'
+E         Use -v to get more diff
+
+tests/components/open_meteo/test_weather.py:364: AssertionError
+----------------------------- Captured stderr call -----------------------------
+INFO:homeassistant.loader:Loaded open_meteo from homeassistant.components.open_meteo
+INFO:homeassistant.loader:Loaded zone from homeassistant.components.zone
+INFO:homeassistant.setup:Setting up zone
+INFO:homeassistant.setup:Setting up open_meteo
+INFO:homeassistant.loader:Loaded weather from homeassistant.components.weather
+INFO:homeassistant.setup:Setting up weather
+INFO:homeassistant.components.weather:Setting up open_meteo.weather
+INFO:homeassistant.helpers.entity_registry:Registered new weather.open_meteo entity: weather.home
+------------------------------ Captured log call -------------------------------
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded open_meteo from homeassistant.components.open_meteo
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded zone from homeassistant.components.zone
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up zone
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up open_meteo
+2021-11-24 03:00:00.000 INFO     SyncWorker_0 homeassistant.loader:loader.py:796 Loaded weather from homeassistant.components.weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.setup:setup.py:393 Setting up weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.components.weather:entity_platform.py:484 Setting up open_meteo.weather
+2021-11-24 03:00:00.000 INFO     MainThread homeassistant.helpers.entity_registry:entity_registry.py:1638 Registered new weather.open_meteo entity: weather.home
+=========================== short test summary info ============================
+FAILED tests/components/open_meteo/test_weather.py::test_hourly_forecast_time_boundary[naive-assumed-utc]
+FAILED tests/components/open_meteo/test_weather.py::test_hourly_forecast_time_boundary[aware-utc]
+FAILED tests/components/open_meteo/test_weather.py::test_hourly_forecast_time_boundary[aware-positive-offset]
+3 failed in 0.65s

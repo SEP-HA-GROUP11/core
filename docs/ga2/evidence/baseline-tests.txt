@@ -1,0 +1,4 @@
+.....                                                                    [100%]
+--------------------------- snapshot report summary ----------------------------
+2 snapshots passed.
+5 passed in 0.69s

@@ -1,0 +1,37 @@
+/workspaces/core/homeassistant/components/open_meteo/diagnostics.py
+    F 17:0 async_get_config_entry_diagnostics - A (1)
+/workspaces/core/homeassistant/components/open_meteo/weather.py
+    M 179:4 OpenMeteoWeatherEntity._async_forecast_hourly - C (16)
+    M 121:4 OpenMeteoWeatherEntity._async_forecast_daily - C (11)
+    C 51:0 OpenMeteoWeatherEntity - B (6)
+    M 87:4 OpenMeteoWeatherEntity.condition - A (2)
+    M 97:4 OpenMeteoWeatherEntity.native_temperature - A (2)
+    M 105:4 OpenMeteoWeatherEntity.native_wind_speed - A (2)
+    M 113:4 OpenMeteoWeatherEntity.wind_bearing - A (2)
+    F 41:0 async_setup_entry - A (1)
+    M 68:4 OpenMeteoWeatherEntity.__init__ - A (1)
+/workspaces/core/homeassistant/components/open_meteo/__init__.py
+    F 11:0 async_setup_entry - A (1)
+    F 24:0 async_unload_entry - A (1)
+/workspaces/core/homeassistant/components/open_meteo/coordinator.py
+    C 27:0 OpenMeteoDataUpdateCoordinator - A (3)
+    M 45:4 OpenMeteoDataUpdateCoordinator._async_update_data - A (3)
+    M 32:4 OpenMeteoDataUpdateCoordinator.__init__ - A (1)
+/workspaces/core/homeassistant/components/open_meteo/config_flow.py
+    C 15:0 OpenMeteoFlowHandler - A (4)
+    M 21:4 OpenMeteoFlowHandler.async_step_user - A (3)
+/workspaces/core/tests/components/open_meteo/test_config_flow.py
+    F 14:0 test_full_user_flow - B (6)
+/workspaces/core/tests/components/open_meteo/conftest.py
+    F 36:0 mock_open_meteo - A (3)
+    F 16:0 mock_config_entry - A (1)
+    F 27:0 mock_setup_entry - A (1)
+/workspaces/core/tests/components/open_meteo/test_weather.py
+    F 19:0 test_forecast_service - A (3)
+/workspaces/core/tests/components/open_meteo/test_init.py
+    F 16:0 test_load_unload_config_entry - A (4)
+    F 39:0 test_config_entry_not_ready - A (3)
+    F 53:0 test_config_entry_zone_removed - A (3)
+
+25 blocks (classes, functions, methods) analyzed.
+Average complexity: A (3.36)

@@ -1,0 +1,18 @@
+............                                                             [100%]
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.5-final-0 ________________
+
+Name                                                 Stmts   Miss Branch BrPart  Cover   Missing
+------------------------------------------------------------------------------------------------
+homeassistant/components/open_meteo/__init__.py         12      0      0      0   100%
+homeassistant/components/open_meteo/config_flow.py      17      0      2      0   100%
+homeassistant/components/open_meteo/const.py             8      0      0      0   100%
+homeassistant/components/open_meteo/coordinator.py      22      0      2      0   100%
+homeassistant/components/open_meteo/diagnostics.py       9      9      0      0     0%   3-22
+homeassistant/components/open_meteo/weather.py         117      0     58     18    90%   135->140, 140->145, 150->153, 153->158, 158->163, 163->168, 168->173, 191->193, 200->205, 205->210, 210->213, 213->216, 221->224, 224->227, 227->230, 230->233, 233->238, 238->241
+------------------------------------------------------------------------------------------------
+TOTAL                                                  185      9     62     18    89%
+Coverage JSON written to file docs/ga2/evidence/coverage-after-first-tests.json
+--------------------------- snapshot report summary ----------------------------
+2 snapshots passed.
+12 passed in 1.04s

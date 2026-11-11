@@ -11,5 +11,23 @@
         "description": "Select location to use for weather forecasting"
       }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "forecast_days": "Daily forecast limit"
+        },
+        "description": "Choose how many available daily forecast entries to return. This does not change the hourly forecast or the data downloaded from Open-Meteo."
+      }
+    }
+  },
+  "selector": {
+    "forecast_days": {
+      "options": {
+        "3": "3 days",
+        "all": "All available"
+      }
+    }
   }
 }

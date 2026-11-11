@@ -35,7 +35,13 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, WMO_TO_HA_CONDITION_MAP
+from .const import (
+    CONF_FORECAST_DAYS,
+    DEFAULT_FORECAST_DAYS,
+    DOMAIN,
+    FORECAST_DAY_LIMITS,
+    WMO_TO_HA_CONDITION_MAP,
+)
 from .coordinator import OpenMeteoConfigEntry
 
 
@@ -75,6 +81,13 @@ class OpenMeteoWeatherEntity(
         """Initialize Open-Meteo weather entity."""
         super().__init__(coordinator=coordinator)
         self._attr_unique_id = entry.entry_id
+
+        forecast_days = entry.options.get(CONF_FORECAST_DAYS, DEFAULT_FORECAST_DAYS)
+        self._forecast_day_limit = (
+            FORECAST_DAY_LIMITS.get(forecast_days)
+            if isinstance(forecast_days, str)
+            else None
+        )
 
         self._attr_device_info = DeviceInfo(
             entry_type=DeviceEntryType.SERVICE,
@@ -124,7 +137,11 @@ class OpenMeteoWeatherEntity(
         if (daily := self.coordinator.data.daily) is None:
             return None
 
-        return [_build_daily_forecast(daily, index) for index in range(len(daily.time))]
+        count = len(daily.time)
+        if self._forecast_day_limit is not None:
+            count = min(count, self._forecast_day_limit)
+
+        return [_build_daily_forecast(daily, index) for index in range(count)]
 
     @callback
     @override

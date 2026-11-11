@@ -7,13 +7,15 @@ from open_meteo import Forecast as OpenMeteoForecast
 import pytest
 from syrupy.assertion import SnapshotAssertion
 
-from homeassistant.components.open_meteo.const import DOMAIN
+from homeassistant.components.open_meteo.const import CONF_FORECAST_DAYS, DOMAIN
 from homeassistant.components.weather import (
     DOMAIN as WEATHER_DOMAIN,
     SERVICE_GET_FORECASTS,
 )
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import ATTR_ENTITY_ID, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 
 from tests.common import MockConfigEntry, async_load_json_object_fixture
 
@@ -366,3 +368,199 @@ async def test_hourly_forecast_time_boundary(
         "temperature_2m"
     ][1:]
     assert mock_open_meteo.forecast.call_count == 1
+
+
+@pytest.mark.freeze_time("2021-11-24T03:00:00+00:00")
+async def test_forecast_days_options_service(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_open_meteo: AsyncMock,
+) -> None:
+    """Apply and remove the daily limit through options and the public service."""
+    mock_config_entry.add_to_hass(hass)
+    original_data = dict(mock_config_entry.data)
+
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert mock_config_entry.options == {}
+
+    daily_before = await hass.services.async_call(
+        WEATHER_DOMAIN,
+        SERVICE_GET_FORECASTS,
+        {ATTR_ENTITY_ID: "weather.home", "type": "daily"},
+        blocking=True,
+        return_response=True,
+    )
+    hourly_before = await hass.services.async_call(
+        WEATHER_DOMAIN,
+        SERVICE_GET_FORECASTS,
+        {ATTR_ENTITY_ID: "weather.home", "type": "hourly"},
+        blocking=True,
+        return_response=True,
+    )
+
+    assert len(daily_before["weather.home"]["forecast"]) == 7
+    mock_open_meteo.forecast.assert_called_once()
+    original_request = mock_open_meteo.forecast.call_args
+
+    flow = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    assert flow["type"] is FlowResultType.FORM
+
+    result = await hass.config_entries.options.async_configure(
+        flow["flow_id"],
+        user_input={CONF_FORECAST_DAYS: "3"},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert mock_config_entry.options == {CONF_FORECAST_DAYS: "3"}
+    assert mock_config_entry.data == original_data
+    assert mock_open_meteo.forecast.call_count == 2
+    assert mock_open_meteo.forecast.call_args == original_request
+
+    daily_after = await hass.services.async_call(
+        WEATHER_DOMAIN,
+        SERVICE_GET_FORECASTS,
+        {ATTR_ENTITY_ID: "weather.home", "type": "daily"},
+        blocking=True,
+        return_response=True,
+    )
+    hourly_after = await hass.services.async_call(
+        WEATHER_DOMAIN,
+        SERVICE_GET_FORECASTS,
+        {ATTR_ENTITY_ID: "weather.home", "type": "hourly"},
+        blocking=True,
+        return_response=True,
+    )
+
+    assert daily_after == {
+        "weather.home": {
+            "forecast": daily_before["weather.home"]["forecast"][:3],
+        }
+    }
+    assert hourly_after == hourly_before
+    assert mock_open_meteo.forecast.call_count == 2
+
+    daily_data = mock_config_entry.runtime_data.data.daily
+    assert daily_data is not None
+    assert len(daily_data.time) == 7
+
+    flow = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    assert flow["type"] is FlowResultType.FORM
+
+    result = await hass.config_entries.options.async_configure(
+        flow["flow_id"],
+        user_input={CONF_FORECAST_DAYS: "all"},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert mock_config_entry.options == {CONF_FORECAST_DAYS: "all"}
+
+    daily_restored = await hass.services.async_call(
+        WEATHER_DOMAIN,
+        SERVICE_GET_FORECASTS,
+        {ATTR_ENTITY_ID: "weather.home", "type": "daily"},
+        blocking=True,
+        return_response=True,
+    )
+
+    assert daily_restored == daily_before
+    assert mock_open_meteo.forecast.call_count == 3
+
+
+@pytest.mark.freeze_time("2021-11-24T03:00:00+00:00")
+@pytest.mark.parametrize(
+    "invalid_choice",
+    [
+        pytest.param("unsupported", id="unknown-choice"),
+        pytest.param(3, id="integer"),
+        pytest.param(None, id="null"),
+        pytest.param(["3"], id="list"),
+    ],
+)
+async def test_forecast_days_invalid_stored_option(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_open_meteo: AsyncMock,
+    invalid_choice: object,
+) -> None:
+    """Invalid stored settings fall back to all available daily entries."""
+    mock_config_entry.add_to_hass(hass)
+    original_data = dict(mock_config_entry.data)
+    stored_options = {CONF_FORECAST_DAYS: invalid_choice}
+
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        options=stored_options,
+    )
+
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert mock_config_entry.data == original_data
+    assert mock_config_entry.options == stored_options
+
+    response = await hass.services.async_call(
+        WEATHER_DOMAIN,
+        SERVICE_GET_FORECASTS,
+        {ATTR_ENTITY_ID: "weather.home", "type": "daily"},
+        blocking=True,
+        return_response=True,
+    )
+
+    assert len(response["weather.home"]["forecast"]) == 7
+    mock_open_meteo.forecast.assert_called_once()
+
+
+@pytest.mark.freeze_time("2021-11-24T03:00:00+00:00")
+@pytest.mark.parametrize(
+    "available_days",
+    [
+        pytest.param(0, id="empty-forecast"),
+        pytest.param(2, id="fewer-than-three-days"),
+    ],
+)
+async def test_forecast_days_short_response(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_open_meteo: AsyncMock,
+    available_days: int,
+) -> None:
+    """Return only available entries when fewer than three days exist."""
+    payload = await async_load_json_object_fixture(hass, "forecast.json", DOMAIN)
+    payload["daily"] = {
+        key: values[:available_days] for key, values in payload["daily"].items()
+    }
+    mock_open_meteo.forecast.return_value = OpenMeteoForecast.from_json(
+        json.dumps(payload)
+    )
+
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        options={CONF_FORECAST_DAYS: "3"},
+    )
+
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    response = await hass.services.async_call(
+        WEATHER_DOMAIN,
+        SERVICE_GET_FORECASTS,
+        {ATTR_ENTITY_ID: "weather.home", "type": "daily"},
+        blocking=True,
+        return_response=True,
+    )
+
+    forecasts = response["weather.home"]["forecast"]
+    assert len(forecasts) == available_days
+    assert [forecast["temperature"] for forecast in forecasts] == (
+        payload["daily"]["temperature_2m_max"]
+    )
+    mock_open_meteo.forecast.assert_called_once()

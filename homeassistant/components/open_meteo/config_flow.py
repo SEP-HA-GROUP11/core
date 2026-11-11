@@ -5,17 +5,41 @@ from typing import Any, override
 import voluptuous as vol
 
 from homeassistant.components.zone import DOMAIN as ZONE_DOMAIN
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
 from homeassistant.const import CONF_ZONE
-from homeassistant.helpers.selector import EntitySelector, EntitySelectorConfig
+from homeassistant.core import callback
+from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
-from .const import DOMAIN
+from .const import (
+    CONF_FORECAST_DAYS,
+    DEFAULT_FORECAST_DAYS,
+    DOMAIN,
+    FORECAST_DAY_LIMITS,
+)
 
 
 class OpenMeteoFlowHandler(ConfigFlow, domain=DOMAIN):
     """Config flow for OpenMeteo."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    @override
+    def async_get_options_flow(config_entry: ConfigEntry) -> OpenMeteoOptionsFlow:
+        """Return the options flow for this entry."""
+        return OpenMeteoOptionsFlow()
 
     @override
     async def async_step_user(
@@ -38,6 +62,45 @@ class OpenMeteoFlowHandler(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_ZONE): EntitySelector(
                         EntitySelectorConfig(domain=ZONE_DOMAIN),
+                    ),
+                }
+            ),
+        )
+
+
+class OpenMeteoOptionsFlow(OptionsFlowWithReload):
+    """Manage the daily forecast limit."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Configure the number of daily forecast entries returned."""
+        if user_input is not None:
+            return self.async_create_entry(
+                data={**self.config_entry.options, **user_input}
+            )
+
+        forecast_days = self.config_entry.options.get(
+            CONF_FORECAST_DAYS, DEFAULT_FORECAST_DAYS
+        )
+        if (
+            not isinstance(forecast_days, str)
+            or forecast_days not in FORECAST_DAY_LIMITS
+        ):
+            forecast_days = DEFAULT_FORECAST_DAYS
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_FORECAST_DAYS, default=forecast_days
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=list(FORECAST_DAY_LIMITS),
+                            mode=SelectSelectorMode.DROPDOWN,
+                            translation_key=CONF_FORECAST_DAYS,
+                        )
                     ),
                 }
             ),

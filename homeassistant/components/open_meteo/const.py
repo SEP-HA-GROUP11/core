@@ -16,6 +16,13 @@ from homeassistant.components.weather import (
 )
 
 DOMAIN: Final = "open_meteo"
+CONF_FORECAST_DAYS = "forecast_days"
+DEFAULT_FORECAST_DAYS = "all"
+
+FORECAST_DAY_LIMITS: dict[str, int | None] = {
+    DEFAULT_FORECAST_DAYS: None,
+    "3": 3,
+}
 
 LOGGER = logging.getLogger(__package__)
 SCAN_INTERVAL = timedelta(minutes=30)

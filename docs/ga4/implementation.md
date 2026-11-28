@@ -58,9 +58,3 @@ Results on commit `74119279fca`:
 - `prek`: ruff check and format, codespell, JSON check, Prettier, mypy, Pylint and hassfest passed. Hooks with no files to check were skipped.
 - Not run: the full Home Assistant test suite.
 
-## Pull requests and review evidence
-
-| Change | Author | PR | Reviewer | Review link |
-|---|---|---|---|---|
-| Initial-setup forecast limit | Hussein | **TODO** | **TODO** | **TODO** |
-| This record | Hussein | **TODO** | **TODO** | **TODO** |
